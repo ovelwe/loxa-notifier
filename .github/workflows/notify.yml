@@ -1,10 +1,7 @@
 name: LOXA → Telegram
 
-# Проверяет сайт каждые 10 минут и отправляет новое в канал.
-# Первый запуск только запоминает уже существующие материалы (без спама).
 on:
   schedule:
-    # ВНИМАНИЕ: время в UTC. */10 = каждые 10 минут (минимум у GitHub — 5).
     - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
@@ -21,7 +18,6 @@ on:
         type: boolean
         default: false
 
-# Не даём запускам накладываться друг на друга
 concurrency:
   group: loxa-notify
   cancel-in-progress: false
@@ -31,14 +27,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: write          # нужно, чтобы коммитить state.json
+      contents: write
+    environment: TELEGRAM_BOT_TOKEN
+
     steps:
       - name: Получить код
         uses: actions/checkout@v4
         with:
-          # Важно: забираем всю историю, чтобы merge работал нормально
           fetch-depth: 0
-          # Важно: используем токен с правами на пуш
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Python
@@ -71,64 +67,33 @@ jobs:
       - name: Сохранить state.json в репозиторий
         if: ${{ inputs.dry_run != true }}
         run: |
-          set -e  # прерываем при любой ошибке
-
-          # Проверяем, изменился ли state.json
+          set -e
           if git diff --quiet -- state.json && [ -f state.json ]; then
-            echo "state.json не изменился, выходим"
+            echo "state.json не изменился"
             exit 0
           fi
-
-          # Настраиваем git
           git config user.name "loxa-notifier-bot"
           git config user.email "loxa-notifier-bot@users.noreply.github.com"
-
-          # Коммитим изменения
           git add state.json || true
           if git diff --cached --quiet; then
             echo "Нечего коммитить"
             exit 0
           fi
+          git commit -m "chore(state): $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
 
-          git commit -m "chore(state): $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-
-          # Ветка, в которую пушим
           BRANCH="${GITHUB_REF_NAME:-main}"
-
-          # Retry-цикл: пробуем запушить до 5 раз
           for i in 1 2 3 4 5; do
-            echo "=== Попытка пуша #$i ==="
-
-            # Пробуем запушить
+            echo "=== Попытка #$i ==="
             if git push origin "$BRANCH"; then
-              echo "✅ Успешно запушено с попытки #$i"
+              echo "✅ Запушено"
               exit 0
             fi
-
-            echo "⚠️ Пуш не удался, подтягиваем свежие изменения..."
-
-            # Подтягиваем свежее БЕЗ rebase (rebase ломает HEAD в CI)
-            if ! git fetch origin "$BRANCH"; then
-              echo "❌ Не удалось сделать fetch"
-              exit 1
-            fi
-
-            # Мержим удалённую ветку в локальную
-            # При конфликте в state.json — берём НАШУ версию (свежие данные)
-            if ! git merge --no-rebase -X ours "origin/$BRANCH" -m "chore: auto-merge state [skip ci]"; then
-              echo "⚠️ Merge с конфликтом, разрешаем вручную..."
-
-              # Если конфликт — берём НАШ state.json
+            git fetch origin "$BRANCH"
+            if ! git merge --no-rebase -X ours "origin/$BRANCH" -m "chore: auto-merge [skip ci]"; then
               git checkout --ours state.json 2>/dev/null || true
               git add state.json
-
-              # Завершаем merge
-              git commit -m "chore: resolve state.json conflict [skip ci]" || true
+              git commit -m "chore: resolve conflict [skip ci]" || true
             fi
-
-            # Небольшая пауза перед следующей попыткой
             sleep 2
           done
-
-          echo "❌ Не удалось запушить после 5 попыток"
           exit 1
