@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-10T16:38:32+00:00",
+  "updated_at": "2026-09-10T19:17:03+00:00",
   "blog": {
     "known": {
       "/ru/blog/innovations-1": {
@@ -42,9 +42,19 @@
         "first_seen": "2026-09-10T07:48:37+00:00",
         "title": "Борский крылатый флот",
         "notified": true
+      },
+      "/ru/book/grisha-history": {
+        "first_seen": "2026-09-10T19:17:03+00:00",
+        "title": "Но хотел ли он быть ИМ?",
+        "notified": true
+      },
+      "/ru/book/mor": {
+        "first_seen": "2026-09-10T19:17:03+00:00",
+        "title": "Повезло, что он за нас.",
+        "notified": true
       }
     },
-    "last_notified": "2026-09-10T07:48:37+00:00"
+    "last_notified": "2026-09-10T19:17:03+00:00"
   },
-  "last_run": "2026-09-10T16:38:32+00:00"
+  "last_run": "2026-09-10T19:17:03+00:00"
 }
