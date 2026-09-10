@@ -1,0 +1,82 @@
+name: LOXA → Telegram
+
+# Проверяет сайт каждые 10 минут и отправляет новое в канал.
+# Первый запуск только запоминает уже существующие материалы (без спама).
+on:
+  schedule:
+    # ВНИМАНИЕ: время в UTC. */10 = каждые 10 минут (минимум у GitHub — 5).
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Только показать, ничего не отправлять"
+        type: boolean
+        default: false
+      force:
+        description: "Игнорировать state.json (переслать всё найденное)"
+        type: boolean
+        default: false
+      announce_baseline:
+        description: "Отправить и уже существующие материалы"
+        type: boolean
+        default: false
+
+# Не даём запускам накладываться друг на друга
+concurrency:
+  group: loxa-notify
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write          # нужно, чтобы коммитить state.json
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Зависимости
+        run: pip install -r requirements.txt
+
+      - name: Проверить сайт и отправить новое
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SITE_BASE_URL: ${{ vars.SITE_BASE_URL || 'https://loxa-rpg.vercel.app' }}
+          LOCALE: ${{ vars.LOCALE || 'ru' }}
+          PARSE_MODE: ${{ vars.PARSE_MODE || 'HTML' }}
+          MESSAGE_MAX_CHARS: "3800"
+          MAX_MESSAGE_PARTS: "4"
+          SEND_MARKDOWN_FILE: "true"
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
+          if [ "${{ inputs.force }}" = "true" ]; then FLAGS="$FLAGS --force"; fi
+          if [ "${{ inputs.announce_baseline }}" = "true" ]; then FLAGS="$FLAGS --announce-baseline"; fi
+          echo "Запуск: python bot.py check $FLAGS"
+          python bot.py check $FLAGS
+
+      - name: Сохранить state.json в репозиторий
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          if git diff --quiet -- state.json && [ -f state.json ] && git ls-files --error-unmatch state.json >/dev/null 2>&1; then
+            echo "state.json не изменился"
+            exit 0
+          fi
+          git config user.name "loxa-notifier-bot"
+          git config user.email "loxa-notifier-bot@users.noreply.github.com"
+          git add state.json || true
+          if git diff --cached --quiet; then
+            echo "Нечего коммитить"
+            exit 0
+          fi
+          git commit -m "chore(state): $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME:-main}" || true
+          git push
