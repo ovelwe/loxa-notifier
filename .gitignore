@@ -1,7 +1,5 @@
-# секреты — никогда не коммитим
 .env
 
-# служебное
 __pycache__/
 *.pyc
 .venv/
@@ -10,7 +8,6 @@ data/
 export/
 *.log
 .DS_Store
+.idea/
 
-# ВНИМАНИЕ: state.json специально НЕ игнорируется —
-# его коммитит GitHub Actions, чтобы не отправлять дубликаты.
 state.json.tmp
