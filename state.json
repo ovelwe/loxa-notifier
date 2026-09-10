@@ -1,1 +1,45 @@
-
+{
+  "version": 1,
+  "updated_at": "2026-09-10T07:48:37+00:00",
+  "blog": {
+    "known": {
+      "/ru/blog/innovations-1": {
+        "first_seen": "2026-09-10T07:48:29+00:00",
+        "title": "Нововведения. Реально.",
+        "notified": true
+      },
+      "/ru/blog/pidot": {
+        "first_seen": "2026-09-10T07:48:29+00:00",
+        "title": "Об состоянии проекта",
+        "notified": true
+      },
+      "/ru/blog/v1": {
+        "first_seen": "2026-09-10T07:48:30+00:00",
+        "title": "Здравствуйте!",
+        "notified": true
+      }
+    },
+    "last_notified": "2026-09-10T07:48:30+00:00"
+  },
+  "book": {
+    "known": {
+      "/ru/book/bratya-po-oruzhiyu": {
+        "first_seen": "2026-09-10T07:48:30+00:00",
+        "title": "Братья по оружию",
+        "notified": true
+      },
+      "/ru/book/panther-history": {
+        "first_seen": "2026-09-10T07:48:31+00:00",
+        "title": "Тень Пантеры",
+        "notified": true
+      },
+      "/ru/book/petuh-history": {
+        "first_seen": "2026-09-10T07:48:37+00:00",
+        "title": "Борский крылатый флот",
+        "notified": true
+      }
+    },
+    "last_notified": "2026-09-10T07:48:37+00:00"
+  },
+  "last_run": "2026-09-10T07:48:37+00:00"
+}
